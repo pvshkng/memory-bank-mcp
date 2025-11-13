@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastmcp>=2.13.0.2",
-    "pymongo[srv]>=4.15.4",
+    "python-dotenv>=1.2.1",
+    "upstash-redis>=1.5.0",
 ]
