@@ -39,9 +39,9 @@ async def remember(
 @mcp.tool(name="memory.forget")
 async def forget(
     ctx: Context,
-    index: int = Field(..., description=""" Index of the memory item to remove."""),
+    index: int = Field(..., description="""Index of the memory item to remove."""),
 ) -> str:
-    """Remove a memory item by its index."""
+    """Remove a memory item by its index. This tool must be run one at a time as memory indexes change after each removal."""
 
     user = get_user(ctx)
     if not user:
