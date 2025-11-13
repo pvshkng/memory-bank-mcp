@@ -1,6 +1,4 @@
 from fastmcp import FastMCP, Context
-from starlette.requests import Request
-from typing import List, Annotated, Optional
 from pydantic import Field
 from lib.redis import get_redis_client, get_memory_key
 from lib.helper import get_user
@@ -39,11 +37,27 @@ async def remember(
 
 
 @mcp.tool(name="memory.forget")
-def forget(
-    ctx: Context, key: str, value: str = Field(..., description=""" Details """)
+async def forget(
+    ctx: Context,
+    index: int = Field(..., description=""" Index of the memory item to remove."""),
 ) -> str:
-    """Remove a memory item about a user from the memory bank."""
-    return f"Stored memory item with key: {key}"
+    """Remove a memory item by its index."""
+
+    user = get_user(ctx)
+    if not user:
+        return "Memory feature is not available for guest users."
+
+    client = get_redis_client()
+    key = get_memory_key(user)
+    try:
+        result = client.json.arrpop(key, "$", index)
+        if result:
+            return f"Removed memory item at index {index} about : {result[0]}"
+        else:
+            return f"No memory item found at index {index}."
+
+    except Exception as e:
+        return f"Error removing memory item {index}: {str(e)}"
 
 
 @mcp.resource("resource://memory.recall")
@@ -51,22 +65,14 @@ async def recall(ctx: Context) -> dict:
     user = get_user(ctx)
     if not user:
         return {"error": "User not found"}
-    client = get_redis_client()
-    key = get_memory_key(user)
-    memory = client.json.get(key, "$")
-    return {"memory": memory}
+    try:
+        client = get_redis_client()
+        key = get_memory_key(user)
+        memory = client.json.get(key, "$")
+        return memory[0] if memory else []
 
-
-@mcp.tool
-def greet(name: str) -> str:
-    """Greet someone"""
-    return f"Hello, {name}!"
-
-
-@mcp.tool
-def process_data(input: str) -> str:
-    """Process some data"""
-    return f"Processed: {input}"
+    except Exception as e:
+        return {"error": str(e)}
 
 
 app = mcp.http_app(stateless_http=True, transport="streamable-http")
