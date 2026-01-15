@@ -1,7 +1,11 @@
 from fastmcp import Context
-from starlette.requests import Request
 
-def get_user(ctx: Context) -> str:
-    req: Request = ctx.get_http_request()
-    user = req.headers.get("x-user-email")
-    return user
+def get_user(ctx: Context) -> str | None:
+    if ctx.request_context:
+        context = ctx.request_context
+        print(f"Context: {context}")
+        print(f"request: {context.request}")
+
+        user = context.request.query_params.get("user")
+
+        return user if user else None
